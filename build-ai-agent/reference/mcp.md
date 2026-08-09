@@ -59,9 +59,13 @@ server = MCPServerStreamableHttp(
 await server.connect()
 tools = await server.list_tools()
 print([t.name for t in tools])
+
+# list_tools() alone is NOT proof of access — some servers list tools anonymously and only
+# reject the actual call. Make one real, read-only call and look at what comes back.
+print(await server.call_tool("<a read tool>", {...}))
 ```
 
-The agent is only wired up once that list contains the tools the task needs. Until then:
+The agent is only wired up once a real call returns real data. Until then:
 
 - Do not say "connected".
 - Do not say "the Slack MCP is set up".

@@ -69,7 +69,8 @@ Suspect an MCP helps
 > the <name> MCP because it provides <capability>. Do you want to use this MCP?
 
 After a yes, follow `reference/mcp.md`. **Never call an MCP "connected" on the strength of a
-config file — only on a successful `list_tools()`.**
+config file, or of a `list_tools()` alone — some servers list tools anonymously. Only a real
+`call_tool` that returns data proves the agent can actually reach the system.**
 
 ### RAG — explain, ask, then build with File Search
 
@@ -138,7 +139,8 @@ above only when the user asks for it by name.
 | Excuse | Reality |
 |---|---|
 | "Clearly they need Slack, I'll just check if the MCP exists" | Checking comes *after* consent. Explain and ask first. |
-| "The MCP is in the config, so it's connected" | Config is intent. `list_tools()` returning tools is connection. |
+| "The MCP is in the config, so it's connected" | Config is intent. A tool call returning real data is connection. |
+| "`list_tools()` worked, so it's connected" | Some servers list tools without credentials. Call one and see data. |
 | "They said 'documents', RAG is obvious — building it" | Obvious inferences still get confirmed. It's one question. |
 | "A vector DB is more flexible" | It's more infrastructure they must run. File Search unless they name an alternative. |
 | "A new store per upload keeps things clean" | It hides every earlier document from File Search. One store, reused. |
@@ -151,7 +153,7 @@ above only when the user asks for it by name.
 ## Red flags — stop
 
 - Searching or installing an MCP the user has not said yes to.
-- Writing "connected" without having called `list_tools()`.
+- Writing "connected" without a `call_tool` that returned real data.
 - Writing chunking, embedding, or similarity-search code.
 - A capability in the build with no row in the capability table.
 - A `def` doing I/O in a request path.
