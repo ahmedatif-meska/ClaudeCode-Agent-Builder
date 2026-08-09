@@ -82,7 +82,9 @@ credentials, env var names, or OAuth scopes.** Ask.
 - Gate destructive operations with `require_approval` rather than trusting the prompt.
 - The token belongs in `app/config.py` from the environment. It never appears in a response.
 
-`templates/app/mcp_servers/connection.py` implements all of the above.
+`templates/app/mcp_servers/connection.py` implements all of the above. For a provider with
+expiring tokens, pass an `httpx.Auth` on `params` rather than a static `headers` entry —
+see gotchas #15 and #16.
 
 ## 5. When the user says no
 

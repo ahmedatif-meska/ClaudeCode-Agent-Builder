@@ -90,3 +90,43 @@ pydantic-settings parses list fields as JSON: `CORS_ORIGINS=["http://localhost:3
 
 Every test in the template stubs the model. They prove wiring, validation and lifecycle
 logic. Only a run against a real `OPENAI_API_KEY` proves the agent works.
+
+### 15. A *bad* MCP token can fail worse than *no* token
+
+Measured against Google's hosted Gmail MCP server (`gmailmcp.googleapis.com`):
+
+| request | no `Authorization` header | invalid Bearer token |
+|---|---|---|
+| `initialize` | 200 | 200 |
+| `tools/list` | 200 (full tool list) | **401** |
+| `tools/call` | 401 | 401 |
+
+Two traps. An anonymous `list_tools()` can succeed, so it verifies the transport and says
+nothing about authorization — only a real `call_tool` does. And the 401 from a rejected
+token surfaces through the MCP client as a bare `asyncio.CancelledError` ("Cancelled via
+cancel scope 0x…") from inside anyio, with no mention of auth anywhere in the traceback.
+
+Wrap `connect()` and translate it, or the symptom of an expired refresh token is an
+unreadable stack trace:
+
+```python
+try:
+    await server.connect()
+    tools = await server.list_tools()
+except (Exception, asyncio.CancelledError) as exc:   # startup-only path
+    raise RuntimeError(f"Could not connect to {url} — check the credential. {exc}") from exc
+```
+
+Then make one real read call at startup, so a stale token fails at boot rather than as a
+502 on the first user request.
+
+### 16. Expiring OAuth tokens need `auth=`, not `headers=`
+
+`headers={"Authorization": f"Bearer {token}"}` is fixed when the server object is
+constructed. For any provider whose access tokens expire — Google's last about an hour —
+the app works during testing and starts failing later. Pass an `httpx.Auth` on the params
+instead; the MCP client applies it per request, so it can refresh:
+
+```python
+params={"url": url, "auth": MyRefreshingAuth(...)}
+```
